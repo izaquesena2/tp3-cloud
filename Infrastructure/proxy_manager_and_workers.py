@@ -76,6 +76,12 @@ def add_inbound_rules(ec2_client, security_group_name, worker_security_group_id,
                     'IpRanges': [{'CidrIp': '0.0.0.0/0'}],  # Allow public access (can restrict this further)
                 },
                 {
+                    'IpProtocol': 'tcp',
+                    'FromPort': 9999,
+                    'ToPort': 9999,
+                    'IpRanges': [{'CidrIp': '0.0.0.0/0'}],  # Allow public access to the proxy
+                },
+                {
                     "IpProtocol": "tcp",
                     "FromPort": 22,
                     "ToPort": 22,

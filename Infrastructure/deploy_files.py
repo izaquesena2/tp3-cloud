@@ -134,7 +134,7 @@ def database_instance_setup(instance_dns):
     commands = [
         # install mysql
         "sudo apt-get update -y",
-        "sudo apt-get install mysql-server",
+        "sudo apt-get install mysql-server -y",
         # install sakila database
         "wget -N https://downloads.mysql.com/docs/sakila-db.tar.gz",
         "tar -xvzf sakila-db.tar.gz",
