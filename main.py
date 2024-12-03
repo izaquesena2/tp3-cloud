@@ -1,0 +1,12 @@
+from Infrastructure.client_config import create_client
+from Infrastructure.client_config import create_key_pair
+from Infrastructure.proxy_manager_and_workers import create_proxy_manager_and_workers
+from Infrastructure.deploy_files import deploy_files
+
+ec2_client = create_client()
+
+key_pair_name = create_key_pair(ec2_client)
+
+proxy_manager_and_workers_result = create_proxy_manager_and_workers(ec2_client)
+
+deploy_files(proxy_manager_and_workers_result)
