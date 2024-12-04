@@ -9,7 +9,7 @@ from scp import SCPClient
 parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))
 
-from constants import AWS_CREDENTIALS_FILE, PRIVATE_KEY_FILE, REGION, REMOTE_APP_PATH, REMOTE_AWS_CREDENTIALS_PATH, LOCAL_PROXY_PATH, LOCAL_WORKER_PATH, LOCAL_MANAGER_PATH
+from constants import AWS_CREDENTIALS_FILE, PRIVATE_KEY_FILE, REGION, REMOTE_APP_PATH, REMOTE_AWS_CREDENTIALS_PATH, LOCAL_PROXY_PATH, LOCAL_WORKER_PATH, LOCAL_MANAGER_PATH, LOCAL_GATEKEEPER_PATH, LOCAL_TRUSTED_HOST_PATH
 
 def create_ssh_client(instance_dns):
     """Create an SSH client to connect to the instance."""
@@ -60,43 +60,13 @@ def deploy_script_via_scp(instance_dns, local_app_path):
             "sudo apt install python3 python3-pip -y",
             "sudo apt install -y python3-uvicorn",
             "sudo apt install -y python3-fastapi",
-            "kill -9 $(lsof -t -i :9999)",
+            "kill -9 $(lsof -t -i :8000)",
             "python3 -m uvicorn app:app --host 0.0.0.0 --port 8000 > /home/ubuntu/app.log 2>&1 &"
         ]
         run_commands(instance_dns, commands)
         
     except Exception as e:
         print(f"Failed to deploy script via scp {instance_dns}: {str(e)}")
-    finally:
-        if ssh:
-            ssh.close()
-        
-def setup_aws_credentials(instance_dns):
-    ssh = None
-    try:
-        ssh = create_ssh_client(instance_dns)
-
-        # Create the .aws directory, upload credentials, and set file permissions
-        commands = [
-            "mkdir -p /home/ubuntu/.aws",  # Create .aws directory
-        ]
-        
-        for command in commands:
-            print(f"Executing: {command}")
-            stdin, stdout, stderr = ssh.exec_command(command)
-            print(stderr.read().decode())
-
-        # SCP the credentials file to the remote instance
-        with SCPClient(ssh.get_transport()) as scp:
-            scp.put(AWS_CREDENTIALS_FILE, REMOTE_AWS_CREDENTIALS_PATH)
-            print(f"Successfully copied AWS credentials to {REMOTE_AWS_CREDENTIALS_PATH}")
-            
-        # Change the file permissions for the credentials file
-        ssh.exec_command(f"chmod 600 {REMOTE_AWS_CREDENTIALS_PATH}")
-        print(f"File permissions set for {REMOTE_AWS_CREDENTIALS_PATH}")
-
-    except Exception as e:
-        print(f"Failed to setup aws credentials {str(e)}")
     finally:
         if ssh:
             ssh.close()
@@ -120,8 +90,6 @@ def set_env_variables(instance_dns, env_var_map):
 
 def proxy_setup(proxy_manager_and_workers_result):
     proxy_dns = proxy_manager_and_workers_result["proxy"]["dns"]
-    
-    setup_aws_credentials(proxy_dns)
 
     env_var_map = {
         "MANAGER_DNS": proxy_manager_and_workers_result["manager"]["dns"],
@@ -162,8 +130,36 @@ def manager_and_workers_setup(proxy_manager_and_workers_result):
     deploy_script_via_scp(proxy_manager_and_workers_result["workers"][0]["dns"], LOCAL_WORKER_PATH)
     deploy_script_via_scp(proxy_manager_and_workers_result["workers"][1]["dns"], LOCAL_WORKER_PATH)
 
-def deploy_files(proxy_manager_and_workers_result):
-    manager_and_workers_setup(proxy_manager_and_workers_result)
-    print("Finished manager and workers setup")
-    proxy_setup(proxy_manager_and_workers_result)
-    print("Finished proxy setup")
+def gatekeeper_setup(gatekeepr_and_trusted_host_result):
+    print("Starting gatekeeper setup")
+    gatekeeper_dns = gatekeepr_and_trusted_host_result["gatekeeper"]["dns"]
+
+    env_var_map = {
+        "TRUSTED_HOST_DNS": gatekeepr_and_trusted_host_result["trusted_host"]["dns"],
+    }
+    set_env_variables(gatekeeper_dns, env_var_map)
+
+    deploy_script_via_scp(gatekeeper_dns, LOCAL_GATEKEEPER_PATH)
+
+def trusted_host_setup(proxy_manager_and_workers_result, gatekeepr_and_trusted_host_result):
+    print("Starting gatekeeper setup")
+    trusted_host_dns = gatekeepr_and_trusted_host_result["trusted_host"]["dns"]
+
+    env_var_map = {
+        "PROXY_DNS": proxy_manager_and_workers_result["proxy"]["dns"],
+    }
+    set_env_variables(trusted_host_dns, env_var_map)
+
+    deploy_script_via_scp(trusted_host_dns, LOCAL_TRUSTED_HOST_PATH)
+
+
+def deploy_files(proxy_manager_and_workers_result, gatekeepr_and_trusted_host_result):
+    # manager_and_workers_setup(proxy_manager_and_workers_result)
+    # print("Finished manager and workers setup")
+    # proxy_setup(proxy_manager_and_workers_result)
+    # print("Finished proxy setup")
+    gatekeeper_setup(gatekeepr_and_trusted_host_result)
+    print("Finished gatekeeper setup")
+    trusted_host_setup(proxy_manager_and_workers_result, gatekeepr_and_trusted_host_result)
+    print("Finished trusted host setup")
+

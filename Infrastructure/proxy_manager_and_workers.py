@@ -36,7 +36,7 @@ def add_inbound_rules(ec2_client, security_group_name, worker_security_group_id,
                     "IpProtocol": "tcp",
                     "FromPort": 8000,
                     "ToPort": 8000,
-                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow traffic on port 8000
+                    "UserIdGroupPairs": [{"GroupId": proxy_security_group_id}],  # Allow traffic only from proxy
                 },
                 {
                     "IpProtocol": "tcp",
@@ -55,7 +55,7 @@ def add_inbound_rules(ec2_client, security_group_name, worker_security_group_id,
                     "IpProtocol": "tcp",
                     "FromPort": 8000,
                     "ToPort": 8000,
-                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow traffic on port 8000
+                    "UserIdGroupPairs": [{"GroupId": proxy_security_group_id}], # Allow traffic only from proxy
                 },
                 {
                     "IpProtocol": "tcp",
