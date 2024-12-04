@@ -154,10 +154,10 @@ def trusted_host_setup(proxy_manager_and_workers_result, gatekeepr_and_trusted_h
 
 
 def deploy_files(proxy_manager_and_workers_result, gatekeepr_and_trusted_host_result):
-    # manager_and_workers_setup(proxy_manager_and_workers_result)
-    # print("Finished manager and workers setup")
-    # proxy_setup(proxy_manager_and_workers_result)
-    # print("Finished proxy setup")
+    manager_and_workers_setup(proxy_manager_and_workers_result)
+    print("Finished manager and workers setup")
+    proxy_setup(proxy_manager_and_workers_result)
+    print("Finished proxy setup")
     gatekeeper_setup(gatekeepr_and_trusted_host_result)
     print("Finished gatekeeper setup")
     trusted_host_setup(proxy_manager_and_workers_result, gatekeepr_and_trusted_host_result)
