@@ -32,18 +32,6 @@ def send_query_to_gatekeeper(url, query: str):
         logging.error(f"Error communicating with Trusted Host: {e}")
         return None
 
-async def run_query(request: QueryRequest):
-    query = request.query.strip()
-    logging.info(f"Received query: {query}")
-        
-    # Forward validated query to Trusted Host
-    response = send_query_to_trusted_host(query)
-    if response and response.status_code == 200:
-        return QueryResponse(error=0, stdout=response.json().get("stdout", ""))
-    else:
-        raise HTTPException(status_code=500, detail="Error processing query in Trusted Host")
-
-
 def benchmarking(gatekeepr_and_trusted_host_result):
     print("-------BENCHMARKING-------")
     url = f"http://{gatekeepr_and_trusted_host_result["gatekeeper"]["dns"]}:8000/run-query"
