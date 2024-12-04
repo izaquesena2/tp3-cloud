@@ -13,6 +13,6 @@ proxy_manager_and_workers_result = create_proxy_manager_and_workers(ec2_client)
 
 gatekeepr_and_trusted_host_result = create_gatekeeper_and_trusted_host(ec2_client)
 
-# deploy_files(proxy_manager_and_workers_result, gatekeepr_and_trusted_host_result)
+deploy_files(proxy_manager_and_workers_result, gatekeepr_and_trusted_host_result)
 
 benchmarking(gatekeepr_and_trusted_host_result)
