@@ -33,34 +33,35 @@ def add_inbound_rules(ec2_client, security_group_name, worker_security_group_id,
             GroupId=worker_security_group_id,
             IpPermissions=[
                 {
-                    'IpProtocol': 'tcp',
-                    'FromPort': 3306,
-                    'ToPort': 3306,
-                    'UserIdGroupPairs': [{'GroupId': proxy_security_group_id}],  # Allow traffic from Proxy SG
+                    "IpProtocol": "tcp",
+                    "FromPort": 8000,
+                    "ToPort": 8000,
+                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow traffic on port 8000
                 },
                 {
                     "IpProtocol": "tcp",
                     "FromPort": 22,
                     "ToPort": 22,
-                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow SSH from anywhere
+                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow SSH from anywhere (optional, restrict as needed)
                 },
             ],
         )
+
     elif security_group_name == MANAGER_SECURITY_GROUP_NAME:
         ec2_client.authorize_security_group_ingress(
             GroupId=manager_security_group_id,
             IpPermissions=[
                 {
-                    'IpProtocol': 'tcp',
-                    'FromPort': 3306,
-                    'ToPort': 3306,
-                    'UserIdGroupPairs': [{'GroupId': proxy_security_group_id}],  # Allow traffic from Proxy SG
+                    "IpProtocol": "tcp",
+                    "FromPort": 8000,
+                    "ToPort": 8000,
+                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow traffic on port 8000
                 },
                 {
                     "IpProtocol": "tcp",
                     "FromPort": 22,
                     "ToPort": 22,
-                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow SSH from anywhere
+                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow SSH from anywhere (optional, restrict as needed)
                 },
             ],
         )
@@ -70,22 +71,16 @@ def add_inbound_rules(ec2_client, security_group_name, worker_security_group_id,
             GroupId=proxy_security_group_id,
             IpPermissions=[
                 {
-                    'IpProtocol': 'tcp',
-                    'FromPort': 3306,
-                    'ToPort': 3306,
-                    'IpRanges': [{'CidrIp': '0.0.0.0/0'}],  # Allow public access (can restrict this further)
-                },
-                {
-                    'IpProtocol': 'tcp',
-                    'FromPort': 9999,
-                    'ToPort': 9999,
-                    'IpRanges': [{'CidrIp': '0.0.0.0/0'}],  # Allow public access to the proxy
+                    "IpProtocol": "tcp",
+                    "FromPort": 8000,
+                    "ToPort": 8000,
+                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow traffic on port 8000
                 },
                 {
                     "IpProtocol": "tcp",
                     "FromPort": 22,
                     "ToPort": 22,
-                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow SSH from anywhere
+                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],  # Allow SSH from anywhere (optional, restrict as needed)
                 },
             ],
         )

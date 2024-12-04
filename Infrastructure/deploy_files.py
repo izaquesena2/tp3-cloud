@@ -9,7 +9,7 @@ from scp import SCPClient
 parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))
 
-from constants import AWS_CREDENTIALS_FILE, PRIVATE_KEY_FILE, REGION, REMOTE_APP_PATH, REMOTE_AWS_CREDENTIALS_PATH, LOCAL_PROXY_PATH
+from constants import AWS_CREDENTIALS_FILE, PRIVATE_KEY_FILE, REGION, REMOTE_APP_PATH, REMOTE_AWS_CREDENTIALS_PATH, LOCAL_PROXY_PATH, LOCAL_WORKER_PATH, LOCAL_MANAGER_PATH
 
 def create_ssh_client(instance_dns):
     """Create an SSH client to connect to the instance."""
@@ -53,6 +53,17 @@ def deploy_script_via_scp(instance_dns, local_app_path):
         with SCPClient(ssh.get_transport()) as scp:
             scp.put(local_app_path, REMOTE_APP_PATH)
             print(f"Successfully copied {local_app_path} to {instance_dns}:{REMOTE_APP_PATH}")
+
+        # install dependencies and run proxy program
+        commands = [
+            "sudo apt update -y",
+            "sudo apt install python3 python3-pip -y",
+            "sudo apt install -y python3-uvicorn",
+            "sudo apt install -y python3-fastapi",
+            "kill -9 $(lsof -t -i :9999)",
+            "python3 -m uvicorn app:app --host 0.0.0.0 --port 8000 > /home/ubuntu/app.log 2>&1 &"
+        ]
+        run_commands(instance_dns, commands)
         
     except Exception as e:
         print(f"Failed to deploy script via scp {instance_dns}: {str(e)}")
@@ -121,15 +132,6 @@ def proxy_setup(proxy_manager_and_workers_result):
 
     deploy_script_via_scp(proxy_dns, LOCAL_PROXY_PATH)
 
-    # install dependencies and run proxy program
-    commands = [
-        "sudo apt update -y",
-        "sudo apt install python3 python3-pip -y",
-        "kill -9 $(lsof -t -i :9999)",
-        "python3 /home/ubuntu/app.py > /home/ubuntu/app.log 2>&1 &"
-    ]
-    run_commands(proxy_dns, commands)
-
 def database_instance_setup(instance_dns):
     commands = [
         # install mysql
@@ -149,12 +151,16 @@ def database_instance_setup(instance_dns):
     run_commands(instance_dns, commands)
 
 def manager_and_workers_setup(proxy_manager_and_workers_result):
-    print("Starting manager setup")
+    print("Starting manager database setup")
     database_instance_setup(proxy_manager_and_workers_result["manager"]["dns"])
-    print("Starting worker 1 setup")
+    print("Starting worker 1 database setup")
     database_instance_setup(proxy_manager_and_workers_result["workers"][0]["dns"])
-    print("Starting worker 2 setup")
+    print("Starting worker 2 database setup")
     database_instance_setup(proxy_manager_and_workers_result["workers"][1]["dns"])
+
+    deploy_script_via_scp(proxy_manager_and_workers_result["manager"]["dns"], LOCAL_MANAGER_PATH)
+    deploy_script_via_scp(proxy_manager_and_workers_result["workers"][0]["dns"], LOCAL_WORKER_PATH)
+    deploy_script_via_scp(proxy_manager_and_workers_result["workers"][1]["dns"], LOCAL_WORKER_PATH)
 
 def deploy_files(proxy_manager_and_workers_result):
     manager_and_workers_setup(proxy_manager_and_workers_result)

@@ -1,6 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 import os
+from pathlib import Path
 
 from constants import KEY_PAIR_NAME, REGION
 
